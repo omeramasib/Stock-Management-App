@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'views/main_screen.dart'; // Replace with your actual MainScreen file path
+import 'views/product_list_view.dart';
 
 void main() {
   runApp(const ProviderScope(child: ProductStockManagementApp()));
 }
 
 class ProductStockManagementApp extends StatelessWidget {
-  const ProductStockManagementApp({Key? key}) : super(key: key);
+  const ProductStockManagementApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +18,7 @@ class ProductStockManagementApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
-      home: const MainScreen(),
+      home: const ProductListView(),
     );
   }
 }

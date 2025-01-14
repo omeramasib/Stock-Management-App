@@ -14,8 +14,12 @@ class StockRepository {
   }
 
   Future<void> updateStock(int id, int newStock) async {
-    await dbService.update('products', id, {'stock': newStock});
-  }
+  await dbService.update(
+    'products', // Table name
+    {'stock': newStock}, // Values to update as a Map
+    id, // This needs to be in the whereArgs instead
+  );
+}
 
   Future<void> deleteProduct(int id) async {
     await dbService.delete('products', id);

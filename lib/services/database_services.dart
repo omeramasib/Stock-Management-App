@@ -45,9 +45,19 @@ class DBService {
     return db.insert(table, values);
   }
 
-  Future<int> update(String table, int id, Map<String, dynamic> values) async {
+  // Future<int> update(String table, int id, Map<String, dynamic> values) async {
+  //   final db = await database;
+  //   return db.update(table, values, where: 'id = ?', whereArgs: [id]);
+  // }
+
+    Future<void> update(String table, Map<String, dynamic> values, int id) async {
     final db = await database;
-    return db.update(table, values, where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      table,
+      values,
+      where: 'id = ?', // Specify the condition for which row(s) to update
+      whereArgs: [id], // Provide the arguments for the condition
+    );
   }
 
   Future<int> delete(String table, int id) async {
