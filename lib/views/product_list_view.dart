@@ -1,16 +1,14 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../viewmodels/stock_viewmodel.dart';
 import '../models/product_model.dart';
+import '../viewmodels/stock_viewmodel.dart';
 
 class ProductListView extends ConsumerWidget {
   const ProductListView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.read(stockViewModelProvider.notifier).loadProducts();
+    // Listen for changes in the filtered product list
     final products = ref.watch(stockViewModelProvider);
 
     return Scaffold(
@@ -19,9 +17,7 @@ class ProductListView extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () {
-              _showFilterOptions(context, ref);
-            },
+            onPressed: () => _showFilterOptions(context, ref),
           ),
         ],
       ),
@@ -40,47 +36,63 @@ class ProductListView extends ConsumerWidget {
                   title: Text(product.name),
                   subtitle: Text('Stock: ${product.stock}'),
                   trailing: Text('\$${product.price.toStringAsFixed(2)}'),
-                  onTap: () {
-                    _showUpdateStockDialog(context, ref, product);
-                  },
+                  onTap: () => _showUpdateStockDialog(context, ref, product),
                 );
               },
             ),
-      // body: Consumer(
-      //   builder: (context, ref, child) {
-      //     final filteredProducts = ref.watch(stockViewModelProvider);
-
-      //     if (filteredProducts.isEmpty) {
-      //       return const Center(
-      //         child: Text(
-      //           'No products available. Add some products!',
-      //           style: TextStyle(fontSize: 16),
-      //         ),
-      //       );
-      //     }
-
-      //     return ListView.builder(
-      //       itemCount: filteredProducts.length,
-      //       itemBuilder: (context, index) {
-      //         final product = filteredProducts[index];
-      //         return ListTile(
-      //           title: Text(product.name),
-      //           subtitle: Text('Stock: ${product.stock}'),
-      //           trailing: Text('\$${product.price.toStringAsFixed(2)}'),
-      //           onTap: () {
-      //             _showUpdateStockDialog(context, ref, product);
-      //           },
-      //         );
-      //       },
-      //     );
-      //   },
-      // ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          _showAddProductDialog(context, ref);
-        },
+        onPressed: () => _showAddProductDialog(context, ref),
         child: const Icon(Icons.add),
       ),
+    );
+  }
+
+  void _showFilterOptions(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return ListView(
+          shrinkWrap: true,
+          children: [
+            ListTile(
+              title: const Text('All Products'),
+              onTap: () {
+                ref
+                    .read(stockViewModelProvider.notifier)
+                    .applyFilter((_) => true);
+                Navigator.of(context).pop();
+              },
+            ),
+            ListTile(
+              title: const Text('In Stock'),
+              onTap: () {
+                ref.read(stockViewModelProvider.notifier).applyFilter(
+                      (product) => product.stock > 0,
+                    );
+                Navigator.of(context).pop();
+              },
+            ),
+            ListTile(
+              title: const Text('Low Stock (< 10)'),
+              onTap: () {
+                ref.read(stockViewModelProvider.notifier).applyFilter(
+                      (product) => product.stock > 0 && product.stock < 10,
+                    );
+                Navigator.of(context).pop();
+              },
+            ),
+            ListTile(
+              title: const Text('Out of Stock'),
+              onTap: () {
+                ref.read(stockViewModelProvider.notifier).applyFilter(
+                      (product) => product.stock == 0,
+                    );
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -170,60 +182,6 @@ class ProductListView extends ConsumerWidget {
                 Navigator.of(context).pop();
               },
               child: const Text('Update'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showFilterOptions(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              title: const Text('In Stock'),
-              onTap: () {
-                ref.read(stockViewModelProvider.notifier).applyFilter(
-                      (product) => product.stock > 0,
-                    );
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Low Stock (< 10)'),
-              onTap: () {
-                ref.read(stockViewModelProvider.notifier).applyFilter(
-                      (product) => product.stock > 0 && product.stock < 10,
-                    );
-                // ignore: invalid_use_of_protected_member
-                log(ref
-                    .read(stockViewModelProvider.notifier)
-                    .state
-                    .map((p) => p.name)
-                    .toList()
-                    .toString());
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Out of Stock'),
-              onTap: () {
-                ref.read(stockViewModelProvider.notifier).applyFilter(
-                      (product) => product.stock == 0,
-                    );
-                Navigator.of(context).pop();
-              },
-            ),
-            ListTile(
-              title: const Text('Reset Filter'),
-              onTap: () {
-                ref.read(stockViewModelProvider.notifier).resetFilter();
-                Navigator.of(context).pop();
-              },
             ),
           ],
         );

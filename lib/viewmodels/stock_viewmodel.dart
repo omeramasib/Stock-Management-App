@@ -1,58 +1,47 @@
-import 'dart:developer';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:stock_management_app/services/database_services.dart';
 import '../models/product_model.dart';
+import '../services/database_services.dart';
 
 class StockViewModel extends StateNotifier<List<Product>> {
   StockViewModel() : super([]);
 
-  final DBService database = DBService();
-  List<Product> _allProducts = []; // Holds the original, unfiltered products
-  void loadProducts() async {
-    final dbProducts = await database.queryAll('products');
-    final productList = dbProducts.map((e) => Product.fromMap(e)).toList();
-    _allProducts = productList; // Cache the full product list
-    state = productList; // Set the initial state
+  final DBService _database = DBService();
+  List<Product> _allProducts = []; // Store all products from the database
+
+  /// Load all products from the database
+  Future<void> loadProducts() async {
+    final dbProducts = await _database.queryAll('products');
+    _allProducts = dbProducts.map((e) => Product.fromMap(e)).toList();
+    state = [..._allProducts]; // Reflect the full product list in state
   }
-  Future<void> addProduct(Product product) async {
-    final id = await database.insert('products', product.toMap());
-    final newProduct = product.copyWith(id: id);
-    _allProducts = [..._allProducts, newProduct]; // Update the cache
-    state = [...state, newProduct];
-  }
-  Future<void> updateProduct(Product product) async {
-    await database.update('products', product.toMap(), product.id!);
-    _allProducts = [
-      for (final p in _allProducts)
-        if (p.id == product.id) product else p
-    ];
-  }
+
+  /// Apply a filter to the product list
   void applyFilter(bool Function(Product) filterCondition) {
-    final filteredProducts = _allProducts.where(filterCondition).toList();
-    log('Filtered Products: ${filteredProducts.map((p) => p.name).toList()}');
-    state = filteredProducts;
+    state = _allProducts.where(filterCondition).toList();
   }
 
-  void resetFilter() {
-    state = _allProducts; // Reset to the cached full list
+  /// Add a new product
+  Future<void> addProduct(Product product) async {
+    final id = await _database.insert('products', product.toMap());
+    final newProduct = product.copyWith(id: id);
+    _allProducts.add(newProduct);
+    state = [..._allProducts];
   }
 
-  void updateStock(int id, int newStock) {
-    database.update('products', {'stock': newStock}, id);
-    _allProducts = [
-      for (final product in _allProducts)
-        if (product.id == id) product.copyWith(stock: newStock) else product
-    ];
-    state = [
-      for (final product in state)
-        if (product.id == id) product.copyWith(stock: newStock) else product
-    ];
+  /// Update the stock of a product
+  Future<void> updateStock(int id, int newStock) async {
+    await _database.update('products', {'stock': newStock}, id);
+    _allProducts = _allProducts.map((product) {
+      return product.id == id ? product.copyWith(stock: newStock) : product;
+    }).toList();
+    state = [..._allProducts]; // Reflect updates in the state
   }
 }
 
-// Provider for StockViewModel
 final stockViewModelProvider =
     StateNotifierProvider<StockViewModel, List<Product>>((ref) {
-  return StockViewModel();
+  final viewModel = StockViewModel();
+  viewModel.loadProducts(); // Automatically load products at initialization
+  return viewModel;
 });
+
